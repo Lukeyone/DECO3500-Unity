@@ -95,6 +95,7 @@ public class CameraMovement : MonoBehaviour
         float previousDistance = Vector2.Distance(controls.Touch.PrimaryFingerPosition.ReadValue<Vector2>(),
                                         controls.Touch.SecondaryFingerPosition.ReadValue<Vector2>());
         float distance = 0;
+
         while (true)
         {
             distance = Vector2.Distance(controls.Touch.PrimaryFingerPosition.ReadValue<Vector2>(),
