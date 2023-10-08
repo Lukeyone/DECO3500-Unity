@@ -14,6 +14,8 @@ public class CameraMovement : MonoBehaviour
     Vector3 dragOrigin;
     TouchControls controls;
     Coroutine zoomCoroutine;
+    bool isZoomCoroutineRunning;
+
     bool shouldPan = false;
     bool isClientOnMobile = false;
 
@@ -40,7 +42,6 @@ public class CameraMovement : MonoBehaviour
 
     void StartPanDesktop()
     {
-        Debug.Log("started");
         Vector2 tapPosition = controls.Touch.MousePosition.ReadValue<Vector2>();
         // Save initial pos (first time clicked)
         dragOrigin = cam.ScreenToWorldPoint(tapPosition);
@@ -50,7 +51,6 @@ public class CameraMovement : MonoBehaviour
 
     void StartPanMobile()
     {
-        Debug.Log("started mobile");
         Vector2 tapPosition = controls.Touch.PrimaryFingerPosition.ReadValue<Vector2>();
         // Save initial pos (first time clicked)
         dragOrigin = cam.ScreenToWorldPoint(tapPosition);
@@ -60,7 +60,6 @@ public class CameraMovement : MonoBehaviour
 
     void EndPan()
     {
-        Debug.Log("ended");
         shouldPan = false;
     }
 
@@ -73,7 +72,6 @@ public class CameraMovement : MonoBehaviour
     {
         if (!shouldPan) return;
         Vector2 tapPosition = isClientOnMobile ? controls.Touch.PrimaryFingerPosition.ReadValue<Vector2>() : controls.Touch.MousePosition.ReadValue<Vector2>();
-        Debug.Log("Panning " + tapPosition);
 
         // Calc distance between drag origin & new pos if it is still held down
         Vector3 difference = dragOrigin - cam.ScreenToWorldPoint(tapPosition);
@@ -82,44 +80,57 @@ public class CameraMovement : MonoBehaviour
 
     void ZoomStart()
     {
+        if (isZoomCoroutineRunning) return;
+        Debug.Log("Zoom started");
         zoomCoroutine = StartCoroutine(ZoomDetection());
+        isZoomCoroutineRunning = true;
     }
 
     void ZoomEnd()
     {
+        if (!isZoomCoroutineRunning) return;
+        Debug.Log("Zoom ended");
         StopCoroutine(zoomCoroutine);
+        isZoomCoroutineRunning = false;
     }
 
     IEnumerator ZoomDetection()
     {
+        Debug.Log("Getting Previous distance: ");
+
         float previousDistance = Vector2.Distance(controls.Touch.PrimaryFingerPosition.ReadValue<Vector2>(),
                                         controls.Touch.SecondaryFingerPosition.ReadValue<Vector2>());
-        float distance = 0;
+        Debug.Log("Previous distance: " + previousDistance);
 
         while (true)
         {
-            distance = Vector2.Distance(controls.Touch.PrimaryFingerPosition.ReadValue<Vector2>(),
-                                        controls.Touch.SecondaryFingerPosition.ReadValue<Vector2>());
+            float distance = Vector2.Distance(controls.Touch.PrimaryFingerPosition.ReadValue<Vector2>(),
+                                            controls.Touch.SecondaryFingerPosition.ReadValue<Vector2>());
             // Detection
             // Zoom out
             if (distance > previousDistance)
             {
+                Debug.Log("Zooming out");
+
                 ZoomOut();
             }
             // Zoom in 
             else if (distance < previousDistance)
             {
+                Debug.Log("Zooming in");
+
                 ZoomIn();
             }
             // Keep track of the distance for the next frame
             previousDistance = distance;
+            yield return null;
         }
     }
 
     void ZoomIn()
     {
         Debug.Log("Zooming in...");
-        float newSize = cam.orthographicSize + zoomStep;
+        float newSize = cam.orthographicSize - zoomStep;
         cam.orthographicSize = Mathf.Clamp(newSize, minCamSize, maxCamSize);
         cam.transform.position = ClampCamera(cam.transform.position);
 
