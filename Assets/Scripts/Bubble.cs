@@ -1,7 +1,10 @@
 using System.Collections;
 using System.Collections.Generic;
+using DG.Tweening;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
+using System.Linq;
 
 public class Bubble : MonoBehaviour
 {
@@ -9,34 +12,39 @@ public class Bubble : MonoBehaviour
     [SerializeField] FilterType containFilters;
     [SerializeField] float _fadeOutDistance = 1.3f;
     Transform _player;
+    CanvasGroup _canvasGroup;
     Image _bubbleImage;
-    Image[] _friendsImages;
+    float _bubbleOriginalAlpha;
+    List<Image> _friendsImages;
     enum FadeState
     {
         In,
-        FadingOut, // fade out to show friends
-        Out,
-        FadingIn
+        Out
     }
     FadeState _fadeState = FadeState.In;
 
     void Awake()
     {
+        DOTween.Init();
         _player = GameObject.FindGameObjectWithTag("Player").transform;
+        _canvasGroup = GetComponent<CanvasGroup>();
         _bubbleImage = GetComponent<Image>();
-        _friendsImages = GetComponentsInChildren<Image>();
+        _friendsImages = GetComponentsInChildren<Image>().ToList();
+        _friendsImages.RemoveAt(0); // Remove parent
+        _bubbleOriginalAlpha = _bubbleImage.color.a;
     }
 
     public void CheckFilter(FilterType selectedFilter)
     {
         _isActive = (selectedFilter & containFilters) != 0;
-
+        float _fadeDuration = 1f;
+        _canvasGroup.DOFade(_isActive ? 1 : 0, _fadeDuration);
     }
 
     void Update()
     {
-        float distToPlayer = Vector3.Distance(transform.position, _player.position);
-        Debug.Log("Test " + distToPlayer);
+        if (!_isActive) return;
+        float distToPlayer = Vector2.Distance(transform.position, _player.position);
 
         switch (_fadeState)
         {
@@ -44,21 +52,28 @@ public class Bubble : MonoBehaviour
 
                 if (distToPlayer < _fadeOutDistance)
                 {
-                    _fadeState = FadeState.FadingOut;
+                    FadeBubble(true);
+                    _fadeState = FadeState.Out;
                 }
                 break;
             case FadeState.Out:
                 if (distToPlayer > _fadeOutDistance)
                 {
-                    _fadeState = FadeState.FadingIn;
+                    FadeBubble(false);
+                    _fadeState = FadeState.In;
                 }
                 break;
-            case FadeState.FadingIn:
-                break;
-            case FadeState.FadingOut:
-                break;
         }
-
     }
 
+    void FadeBubble(bool isFadeOut)
+    {
+        float fadeDuration = 1;
+        _bubbleImage.DOFade(isFadeOut ? 0 : _bubbleOriginalAlpha, fadeDuration);
+        for (int i = 0; i < _friendsImages.Count; i++)
+        {
+            var friendsImage = _friendsImages[i];
+            friendsImage.DOFade(isFadeOut ? 1 : 0, fadeDuration);
+        }
+    }
 }
