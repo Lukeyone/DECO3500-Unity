@@ -150,6 +150,78 @@ public partial class @TouchControls: IInputActionCollection2, IDisposable
                     ""isPartOfComposite"": false
                 }
             ]
+        },
+        {
+            ""name"": ""AvatarControl"",
+            ""id"": ""e5224880-712e-4dc1-af71-a6e70a10582f"",
+            ""actions"": [
+                {
+                    ""name"": ""Movement"",
+                    ""type"": ""PassThrough"",
+                    ""id"": ""1b6e32e8-e2ec-43a9-a40d-59223b6b1ba3"",
+                    ""expectedControlType"": ""Vector2"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                }
+            ],
+            ""bindings"": [
+                {
+                    ""name"": ""WASD"",
+                    ""id"": ""fbc7581b-3367-416b-8c1d-54516d340862"",
+                    ""path"": ""2DVector"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Movement"",
+                    ""isComposite"": true,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": ""up"",
+                    ""id"": ""b8f68f1d-131d-46e7-9df2-1b1f10d2f44d"",
+                    ""path"": ""<Keyboard>/w"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Movement"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": ""down"",
+                    ""id"": ""c76b3591-e3ce-4d3c-b371-cabac143f058"",
+                    ""path"": ""<Keyboard>/s"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Movement"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": ""left"",
+                    ""id"": ""3a44c3be-3f0c-41e2-af2a-e21b48d6506a"",
+                    ""path"": ""<Keyboard>/a"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Movement"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": ""right"",
+                    ""id"": ""6970573b-f7ba-4e87-b6cd-6172949ae1c2"",
+                    ""path"": ""<Keyboard>/d"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Movement"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                }
+            ]
         }
     ],
     ""controlSchemes"": []
@@ -162,6 +234,9 @@ public partial class @TouchControls: IInputActionCollection2, IDisposable
         m_Touch_SecondaryTouchContact = m_Touch.FindAction("SecondaryTouchContact", throwIfNotFound: true);
         m_Touch_MouseClick = m_Touch.FindAction("MouseClick", throwIfNotFound: true);
         m_Touch_MousePosition = m_Touch.FindAction("MousePosition", throwIfNotFound: true);
+        // AvatarControl
+        m_AvatarControl = asset.FindActionMap("AvatarControl", throwIfNotFound: true);
+        m_AvatarControl_Movement = m_AvatarControl.FindAction("Movement", throwIfNotFound: true);
     }
 
     public void Dispose()
@@ -305,6 +380,52 @@ public partial class @TouchControls: IInputActionCollection2, IDisposable
         }
     }
     public TouchActions @Touch => new TouchActions(this);
+
+    // AvatarControl
+    private readonly InputActionMap m_AvatarControl;
+    private List<IAvatarControlActions> m_AvatarControlActionsCallbackInterfaces = new List<IAvatarControlActions>();
+    private readonly InputAction m_AvatarControl_Movement;
+    public struct AvatarControlActions
+    {
+        private @TouchControls m_Wrapper;
+        public AvatarControlActions(@TouchControls wrapper) { m_Wrapper = wrapper; }
+        public InputAction @Movement => m_Wrapper.m_AvatarControl_Movement;
+        public InputActionMap Get() { return m_Wrapper.m_AvatarControl; }
+        public void Enable() { Get().Enable(); }
+        public void Disable() { Get().Disable(); }
+        public bool enabled => Get().enabled;
+        public static implicit operator InputActionMap(AvatarControlActions set) { return set.Get(); }
+        public void AddCallbacks(IAvatarControlActions instance)
+        {
+            if (instance == null || m_Wrapper.m_AvatarControlActionsCallbackInterfaces.Contains(instance)) return;
+            m_Wrapper.m_AvatarControlActionsCallbackInterfaces.Add(instance);
+            @Movement.started += instance.OnMovement;
+            @Movement.performed += instance.OnMovement;
+            @Movement.canceled += instance.OnMovement;
+        }
+
+        private void UnregisterCallbacks(IAvatarControlActions instance)
+        {
+            @Movement.started -= instance.OnMovement;
+            @Movement.performed -= instance.OnMovement;
+            @Movement.canceled -= instance.OnMovement;
+        }
+
+        public void RemoveCallbacks(IAvatarControlActions instance)
+        {
+            if (m_Wrapper.m_AvatarControlActionsCallbackInterfaces.Remove(instance))
+                UnregisterCallbacks(instance);
+        }
+
+        public void SetCallbacks(IAvatarControlActions instance)
+        {
+            foreach (var item in m_Wrapper.m_AvatarControlActionsCallbackInterfaces)
+                UnregisterCallbacks(item);
+            m_Wrapper.m_AvatarControlActionsCallbackInterfaces.Clear();
+            AddCallbacks(instance);
+        }
+    }
+    public AvatarControlActions @AvatarControl => new AvatarControlActions(this);
     public interface ITouchActions
     {
         void OnPrimaryFingerPosition(InputAction.CallbackContext context);
@@ -313,5 +434,9 @@ public partial class @TouchControls: IInputActionCollection2, IDisposable
         void OnSecondaryTouchContact(InputAction.CallbackContext context);
         void OnMouseClick(InputAction.CallbackContext context);
         void OnMousePosition(InputAction.CallbackContext context);
+    }
+    public interface IAvatarControlActions
+    {
+        void OnMovement(InputAction.CallbackContext context);
     }
 }
