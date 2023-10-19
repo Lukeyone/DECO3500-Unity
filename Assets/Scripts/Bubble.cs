@@ -34,9 +34,9 @@ public class Bubble : MonoBehaviour
         _bubbleOriginalAlpha = _bubbleImage.color.a;
     }
 
-    public void CheckFilter(FilterType selectedFilter)
+    public void CheckFilter(FilterType selectedFilter, bool isFriendMode)
     {
-        _isActive = (selectedFilter & containFilters) != 0;
+        _isActive = isFriendMode && (selectedFilter & containFilters) != 0;
         float _fadeDuration = 1f;
         _canvasGroup.DOFade(_isActive ? 1 : 0, _fadeDuration);
     }

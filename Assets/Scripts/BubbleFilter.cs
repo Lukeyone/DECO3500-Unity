@@ -7,6 +7,12 @@ public class BubbleFilter : MonoBehaviour
 {
     Bubble[] _bubbles;
     FilterType _selectedFilter = FilterType.Majors;
+    bool _isFriendMode = false;
+    public void SetFriendMode(bool active)
+    {
+        _isFriendMode = active;
+        FilterBubbles();
+    }
 
     void Start()
     {
@@ -52,7 +58,7 @@ public class BubbleFilter : MonoBehaviour
         }
         foreach (var b in _bubbles)
         {
-            b.CheckFilter(_selectedFilter);
+            b.CheckFilter(_selectedFilter, _isFriendMode);
         }
     }
 }
